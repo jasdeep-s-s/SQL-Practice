@@ -1,20 +1,33 @@
--- Show first name, last name, and the full province name of each patient.
--- Example: 'Ontario' instead of 'ON'
+-- For each doctor, display their id, full name, and the first and last admission date they attended.
 SELECT
-  patients.first_name,
-  patients.last_name,
-  province_names.province_name AS province
-FROM patients
-  JOIN province_names ON province_names.province_id = patients.province_id  
+  concat(
+    doctors.first_name,
+    ' ',
+    doctors.last_name
+  ) AS full_name,
+  doctors.doctor_id,
+  min(admission_date) AS first_admission_date,
+  max(admission_date) AS last_admission_date
+FROM admissions
+  JOIN doctors ON admissions.attending_doctor_id = doctors.doctor_id
+GROUP BY attending_doctor_id
 
--- Show patient_id and first_name from patients where their first_name start and ends with 's' and is at least 6 characters long.
+-- For every admission, display the patient's full name, their admission diagnosis, and their doctor's full name who diagnosed their problem.
 SELECT
-  patient_id,
-  first_name
+  concat(
+    patients.first_name,
+    ' ',
+    patients.last_name
+  ) AS patient_name,
+  admissions.diagnosis,
+  concat(
+    doctors.first_name,
+    ' ',
+    doctors.last_name
+  ) AS doctor_name
 FROM patients
-WHERE
-  first_name LIKE "s%s"
-  AND length(first_name) >= 6
+  JOIN admissions ON admissions.patient_id = patients.patient_id
+  JOIN doctors ON admissions.attending_doctor_id = doctors.doctor_id
 
 -- Show the total amount of male patients and the total amount of female patients in the patients table.
 -- Display the two results in the same row.
@@ -92,3 +105,27 @@ SELECT
 FROM admissions
   JOIN doctors ON admissions.attending_doctor_id = doctors.doctor_id
 GROUP BY attending_doctor_id
+
+-- Display patient's full name, height in the units feet rounded to 1 decimal, weight in the unit pounds rounded to 0 decimals, birth_date and gender non abbreviated.
+-- Convert CM to feet by dividing by 30.48.
+-- Convert KG to pounds by multiplying by 2.205.
+SELECT
+  concat(first_name, ' ', last_name) AS patient_name,
+  round(height / 30.48, 1),
+  round(weight * 2.205),
+  birth_date,
+  CASE
+    WHEN gender = 'M' THEN 'MALE'
+    WHEN gender = 'F' THEN 'FEMALE'
+  END AS gender_type
+FROM patients
+
+-- Show patient_id, first_name, last_name from patients whose does not have any records in the admissions table. 
+-- (Their patient_id does not exist in any admissions.patient_id rows.)
+SELECT
+  patients.patient_id,
+  first_name,
+  last_name
+FROM patients
+  LEFT JOIN admissions ON patients.patient_id = admissions.patient_id
+WHERE admissions.patient_id IS NULL
